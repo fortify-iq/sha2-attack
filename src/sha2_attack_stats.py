@@ -1,6 +1,6 @@
 from datetime import datetime
-import sha2
 
+from sha2 import Sha256, Sha512
 from test_sha2_attack import simulate
 
 
@@ -9,7 +9,7 @@ with open('res.csv', 'wt') as f_res, open('lsb.csv', 'wt') as f_lsb:
     header = ',,' + ','.join(str(1 << i) for i in range(11, 21))
     f_res.write(header)
     f_lsb.write(header)
-    for sha2 in (sha2.Sha256, sha2.Sha512):
+    for sha2 in (Sha256, Sha512):
         start = 11
         for noise in (0, 4, 8, 16, 32, 64, 128):
             line_header = '\n{},{:3d},'.format(sha2.bit_count, noise)

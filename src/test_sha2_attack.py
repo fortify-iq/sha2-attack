@@ -2,7 +2,7 @@ import random
 import warnings
 import argparse
 
-import sha2
+from sha2 import Sha256, Sha512
 from sha2_attack import sha2_attack, Stage1hypo
 from sha2_trace_generation import generate_traces
 
@@ -69,7 +69,7 @@ def parse():
     assert not args.verbose or args.experiment_count == 1, \
         '"-v" is permitted only if the experiment count is 1 ("-e 1" or default)'
     return (
-        sha2.Sha256 if args.bit_count == 32 else sha2.Sha512,
+        Sha256 if args.bit_count == 32 else Sha512,
         args.trace_count,
         min(args.trace_count, args.second_stage_count),
         args.noise,
