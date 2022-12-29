@@ -1,17 +1,18 @@
 import numpy as np
 
 
-class Sha2(object):
+class Sha2:
     @staticmethod
     def show(data, size, total_nibble_count):
         if size == -1:
             return '.' * total_nibble_count
         nibble_count = (size >> 2) + 1
-        formatter = '.' * (total_nibble_count - nibble_count) + '{' + ':0{}x'.format(nibble_count) + '}'
+        formatter = '.' * (total_nibble_count - nibble_count) + '{{:0{}x}}'.format(nibble_count)
+
         return formatter.format(data)
 
 
-class Sha256(object):
+class Sha256:
     dtype = np.uint32
     bit_count = 32
     nibble_count = 8
@@ -32,6 +33,7 @@ class Sha256(object):
         t -= (t >> 1) & m1
         t = (t & m2) + ((t >> 2) & m2)
         t = (t + (t >> 4)) & m4
+
         return ((t * h01) >> 24) & 0x3f
 
     @staticmethod
@@ -40,7 +42,7 @@ class Sha256(object):
 
     @staticmethod
     def ch(e, f, g):
-        return np.uint32((e & f) ^ ((~ e) & g))
+        return np.uint32((e & f) ^ ((~e) & g))
 
     @staticmethod
     def s0(a):
@@ -51,7 +53,7 @@ class Sha256(object):
         return np.uint32((e >> 6) ^ (e << 26) ^ (e >> 11) ^ (e << 21) ^ (e >> 25) ^ (e << 7))
 
 
-class Sha512(object):
+class Sha512:
     dtype = np.uint64
     bit_count = 64
     nibble_count = 16
@@ -72,6 +74,7 @@ class Sha512(object):
         t -= (t >> np.uint64(1)) & m1
         t = (t & m2) + ((t >> np.uint64(2)) & m2)
         t = (t + (t >> np.uint64(4))) & m4
+
         return ((t * h01) >> np.uint64(56)) & np.uint64(0x7f)
 
     @staticmethod
@@ -80,22 +83,26 @@ class Sha512(object):
 
     @staticmethod
     def ch(e, f, g):
-        return np.uint64((e & f) ^ ((~ e) & g))
+        return np.uint64((e & f) ^ ((~e) & g))
 
     @staticmethod
     def s0(a):
-        return np.uint64((a >> np.uint64(28))
-                         ^ (a << np.uint64(36))
-                         ^ (a >> np.uint64(34))
-                         ^ (a << np.uint64(30))
-                         ^ (a >> np.uint64(39))
-                         ^ (a << np.uint64(25)))
+        return np.uint64(
+            (a >> np.uint64(28))
+            ^ (a << np.uint64(36))
+            ^ (a >> np.uint64(34))
+            ^ (a << np.uint64(30))
+            ^ (a >> np.uint64(39))
+            ^ (a << np.uint64(25))
+        )
 
     @staticmethod
     def s1(e):
-        return np.uint64((e >> np.uint64(14))
-                         ^ (e << np.uint64(50))
-                         ^ (e >> np.uint64(18))
-                         ^ (e << np.uint64(46))
-                         ^ (e >> np.uint64(41))
-                         ^ (e << np.uint64(23)))
+        return np.uint64(
+            (e >> np.uint64(14))
+            ^ (e << np.uint64(50))
+            ^ (e >> np.uint64(18))
+            ^ (e << np.uint64(46))
+            ^ (e >> np.uint64(41))
+            ^ (e << np.uint64(23))
+        )

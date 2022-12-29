@@ -1,5 +1,7 @@
 from collections import namedtuple
+
 import numpy as np
+
 
 Stage1hypo = namedtuple('Stage1hypo', ['nextA', 'prevA', 'nextE', 'prevE'])
 
@@ -12,7 +14,7 @@ def glue(pair, pattern, bit_size):
     return pair ^ ((pattern & 2) << bit_size) if bit_size > 0 else pattern
 
 
-class Stage1state(object):
+class Stage1state:
     hd_eq = {
         (-2, 0, -2): ((3, 3),),
         (-2, 2, -2): ((1, 3), (3, 1)),
@@ -52,70 +54,116 @@ class Stage1state(object):
 
     def update_prevs(self, current_index, hd):
         mask = self.sha2.dtype((1 << (current_index + 2)) - 1)
-        subsets = [(((self.data[:, 0] + (self.nexts[0] & mask)) >> current_index) & 3) == x
-                   for x in range(4)]
+        subsets = [
+            (((self.data[:, 0] + (self.nexts[0] & mask)) >> current_index) & 3) == x
+            for x in range(4)
+        ]
         averages = np.array([np.average(self.traces[x, 0]) for x in subsets])
         difs = tuple(np.around(averages[1:] - averages[:-1]).astype(int))
         if difs not in hd:
             raise ValueError('{}'.format(current_index))
         patterns = np.array(hd[difs]).astype(self.sha2.dtype)
-        self.prevs = np.array([glue(prev, pattern, current_index)
-                               for prev in self.prevs for pattern in patterns
-                               if fit(prev, pattern, current_index)])
+        self.prevs = np.array(
+            [
+                glue(prev, pattern, current_index)
+                for prev in self.prevs for pattern in patterns
+                if fit(prev, pattern, current_index)
+            ]
+        )
         if self.verbose:
             if len(self.prevs) > 1:
                 print()
             for i, (a, e) in enumerate(self.prevs):
-                print(('Bit {:2d} option {:4d}: {}' + ' ' * (self.sha2.nibble_count * 3 + 4) + '{}')
-                      .format(current_index, i,
-                              self.sha2.show(a, current_index + 1),
-                              self.sha2.show(e, current_index + 1))
-                      )
+                print(
+                    (
+                        'Bit {:2d} option {:4d}: {}'
+                        + ' ' * (self.sha2.nibble_count * 3 + 4)
+                        + '{}'
+                    ).format(
+                        current_index,
+                        i,
+                        self.sha2.show(a, current_index + 1),
+                        self.sha2.show(e, current_index + 1),
+                    )
+                )
 
     def find_bit_before_mismatch(self, bit_index):
         assert bit_index >= self.known_bits
         unknown_bits = bit_index + 1 - self.known_bits
         mask = (1 << (unknown_bits + 1)) - 1
-        subsets = [(((self.data[:, 0] + self.nexts[0]) >> self.known_bits) & mask) == x
-                   for x in range(1 << (unknown_bits + 1))]
+        subsets = [
+            (((self.data[:, 0] + self.nexts[0]) >> self.known_bits) & mask) == x
+            for x in range(1 << (unknown_bits + 1))
+        ]
         averages = np.array([np.average(self.traces[x, 0]) for x in subsets])
-        rotated = [np.concatenate((averages[i:], averages[:i]))[:1 << unknown_bits] for i in
-                   (1, 1 << unknown_bits, 1 + (1 << unknown_bits))]
-        leaps = np.around(averages[:1 << unknown_bits] - rotated[0] - rotated[1] + rotated[2]).astype(int)
+        rotated = [
+            np.concatenate((averages[i:], averages[:i]))[: 1 << unknown_bits]
+            for i in (1, 1 << unknown_bits, 1 + (1 << unknown_bits))
+        ]
+        leaps = np.around(
+            averages[: 1 << unknown_bits] - rotated[0] - rotated[1] + rotated[2]
+        ).astype(int)
         indices = np.array(np.nonzero(leaps)[0])
 
         if len(indices) == 0:
             if self.verbose:
-                print(('Bit {:2d}, found up to {:2d}' + ' ' * ((self.sha2.nibble_count + 1) * 8) + '{} {}')
-                      .format(bit_index, self.known_bits - 1,
-                              self.sha2.show(self.nexts[0], self.known_bits - 1),
-                              self.sha2.show(self.nexts[1], self.known_bits - 1))
-                      )
+                print(
+                    (
+                        'Bit {:2d}, found up to {:2d}'
+                        + ' ' * ((self.sha2.nibble_count + 1) * 8)
+                        + '{} {}'
+                    ).format(
+                        bit_index,
+                        self.known_bits - 1,
+                        self.sha2.show(self.nexts[0], self.known_bits - 1),
+                        self.sha2.show(self.nexts[1], self.known_bits - 1),
+                    )
+                )
             return
+
         if len(indices) == 1:
-            self.nexts += self.sha2.dtype(((1 << unknown_bits) - 1 - indices[0]) << self.known_bits)
+            self.nexts += self.sha2.dtype(
+                ((1 << unknown_bits) - 1 - indices[0]) << self.known_bits
+            )
             self.known_bits = bit_index + 1
             if abs(leaps[indices[0]]) != 4:
                 raise ValueError('{}'.format(bit_index))
             if self.verbose:
-                print(('Bit {:2d}, found up to {:2d}' + ' ' * ((self.sha2.nibble_count + 1) * 8) + '{} {}')
-                      .format(bit_index, self.known_bits - 1,
-                              self.sha2.show(self.nexts[0], self.known_bits - 1),
-                              self.sha2.show(self.nexts[1], self.known_bits - 1))
-                      )
+                print(
+                    (
+                        'Bit {:2d}, found up to {:2d}'
+                        + ' ' * ((self.sha2.nibble_count + 1) * 8)
+                        + '{} {}'
+                    ).format(
+                        bit_index,
+                        self.known_bits - 1,
+                        self.sha2.show(self.nexts[0], self.known_bits - 1),
+                        self.sha2.show(self.nexts[1], self.known_bits - 1),
+                    )
+                )
             return
+
         if len(indices) == 2:
-            self.nexts += (((1 << unknown_bits) - 1 - indices) << self.known_bits).astype(self.sha2.dtype)
+            self.nexts += (((1 << unknown_bits) - 1 - indices) << self.known_bits).astype(
+                self.sha2.dtype
+            )
             self.known_bits = bit_index + 1
             if any(abs(leaps[index]) != 2 for index in indices):
                 raise ValueError('{}'.format(bit_index))
             self.find_bit = self.find_bit_after_mismatch
             if self.verbose:
-                print(('Bit {:2d}, found up to {:2d}' + ' ' * ((self.sha2.nibble_count + 1) * 8) + '{} {}')
-                      .format(bit_index, self.known_bits - 1,
-                              self.sha2.show(self.nexts[0], self.known_bits - 1),
-                              self.sha2.show(self.nexts[1], self.known_bits - 1))
-                      )
+                print(
+                    (
+                        'Bit {:2d}, found up to {:2d}'
+                        + ' ' * ((self.sha2.nibble_count + 1) * 8)
+                        + '{} {}'
+                    ).format(
+                        bit_index,
+                        self.known_bits - 1,
+                        self.sha2.show(self.nexts[0], self.known_bits - 1),
+                        self.sha2.show(self.nexts[1], self.known_bits - 1),
+                    )
+                )
                 print('\nStage 1b - finding A, E until the first mismatch')
             for current_index in range(bit_index):
                 self.update_prevs(current_index, self.hd_eq)
@@ -125,14 +173,18 @@ class Stage1state(object):
                 print('\nStage 1c - finding A, E, deltaA, deltaE after the first mismatch')
             self.prevs[:, 1] ^= 2 << bit_index
             return
+
         raise ValueError('{}'.format(bit_index))
 
     def find_bit_after_mismatch(self, bit_index):
         assert bit_index == self.known_bits
+
         nexts = [self.nexts[i] for i in (0, 1)]
-        subsets = [((((self.data[:, 0] + nexts[0]) >> self.known_bits) & 3) == x)
-                   * ((((self.data[:, 0] + nexts[1]) >> self.known_bits) & 3) == y)
-                   for (x, y) in ((0, 0), (1, 0), (1, 1), (2, 1), (2, 2), (3, 2), (3, 3), (0, 3))]
+        subsets = [
+            ((((self.data[:, 0] + nexts[0]) >> self.known_bits) & 3) == x)
+            * ((((self.data[:, 0] + nexts[1]) >> self.known_bits) & 3) == y)
+            for (x, y) in ((0, 0), (1, 0), (1, 1), (2, 1), (2, 2), (3, 2), (3, 3), (0, 3))
+        ]
         averages = np.array([np.average(self.traces[x, 0]) for x in subsets])
         rotated = [np.concatenate((averages[i:], averages[:i]))[:4] for i in (1, 4, 5)]
         leaps = np.around(averages[:4] - rotated[0] - rotated[1] + rotated[2]).astype(int)
@@ -151,32 +203,42 @@ class Stage1state(object):
                 self.prevs[:, i] ^= mask
                 if leaps[i] > 0:
                     self.prevs[:, i] ^= big_mask
-            elif leaps[i+2] > 0:
+            elif leaps[i + 2] > 0:
                 self.prevs[:, i] ^= big_mask
         if self.nexts[1] > self.nexts[0]:
             self.nexts = self.nexts[::-1]
             self.prevs = self.prevs[:, ::-1]
         self.known_bits += 1
+
         if self.verbose:
             if len(self.prevs) > 1:
                 print()
             for i, (a, e) in enumerate(self.prevs):
-                print(('Bit {:2d} option {:4d}: {}' + ' ' * (self.sha2.nibble_count * 3 + 4) + '{}'
-                       + ' ' * (self.sha2.nibble_count * 3 + 6) + '{} {}')
-                      .format(bit_index, i,
-                              self.sha2.show(a, bit_index + 1),
-                              self.sha2.show(e, bit_index + 1),
-                              self.sha2.show(self.nexts[0], bit_index),
-                              self.sha2.show(self.nexts[1], bit_index))
-                      )
+                print(
+                    (
+                        'Bit {:2d} option {:4d}: {}'
+                        + ' ' * (self.sha2.nibble_count * 3 + 4)
+                        + '{}'
+                        + ' ' * (self.sha2.nibble_count * 3 + 6)
+                        + '{} {}'
+                    ).format(
+                        bit_index,
+                        i,
+                        self.sha2.show(a, bit_index + 1),
+                        self.sha2.show(e, bit_index + 1),
+                        self.sha2.show(self.nexts[0], bit_index),
+                        self.sha2.show(self.nexts[1], bit_index),
+                    )
+                )
 
     def finalize(self):
-        return [Stage1hypo(
-            nextA=self.nexts[i] ^ a,
-            prevA=self.prevs[m][i] ^ a,
-            nextE=self.nexts[j] ^ b,
-            prevE=self.prevs[m][j] ^ b,
-        )
+        return [
+            Stage1hypo(
+                nextA=self.nexts[i] ^ a,
+                prevA=self.prevs[m][i] ^ a,
+                nextE=self.nexts[j] ^ b,
+                prevE=self.prevs[m][j] ^ b,
+            )
             for (i, j) in ((1, 0), (0, 1))
             for m in range(self.prevs.shape[0])
             for a in (self.sha2.dtype(0), self.sha2.dtype((1 << self.sha2.bit_count - 1)))
@@ -184,7 +246,7 @@ class Stage1state(object):
         ]
 
 
-class Stage2state(object):
+class Stage2state:
     def __init__(self, sha2, ae_hypo, data, traces, verbose):
         self.sha2 = sha2
         self.a = [sha2.dtype(0)] * 3 + [sha2.dtype(ae_hypo.prevA), ae_hypo.nextA + data[:, 0]]
@@ -201,60 +263,116 @@ class Stage2state(object):
         mask = self.sha2.dtype((1 << bit_index) - 1)
         point_mask = self.sha2.dtype(1 << bit_index)
         sum_en = self.sigma1 + self.data[:, 1] + self.sha2.round_const[1]
-        sum_e = self.e[4] ^ (sum_en + (self.sha2.ch(self.e[4], self.e[3], self.e[2]) & mask) + (self.a[1] & mask))
-        subsets_e = [[(((sum_e >> bit_index) & 1) == i) * (((self.e[4] >> bit_index) & 1) == j)
-                     for j in (0, 1)] for i in (0, 1)]
-        averages_e = [[np.average(self.traces[subsets_e[i][j], 1]) for j in (0, 1)] for i in (0, 1)]
+        sum_e = self.e[4] ^ (
+            sum_en + (self.sha2.ch(self.e[4], self.e[3], self.e[2]) & mask) + (self.a[1] & mask)
+        )
+        subsets_e = [
+            [
+                (((sum_e >> bit_index) & 1) == i) * (((self.e[4] >> bit_index) & 1) == j)
+                for j in (0, 1)
+            ]
+            for i in (0, 1)
+        ]
+        averages_e = [
+            [np.average(self.traces[subsets_e[i][j], 1]) for j in (0, 1)] for i in (0, 1)
+        ]
         diff_cg = np.around(averages_e[1][1] - averages_e[0][1]).astype(int)
         if abs(diff_cg) != 1:
             raise ValueError('CG error')
-        self.a[1] ^= (self.sha2.dtype(diff_cg == -1) << self.sha2.dtype(bit_index))\
-            ^ (self.e[3] & point_mask)
+        self.a[1] ^= (self.sha2.dtype(diff_cg == -1) << self.sha2.dtype(bit_index)) ^ (
+            self.e[3] & point_mask
+        )
         diff_f = np.around(averages_e[1][0] - averages_e[0][0]).astype(int)
         if abs(diff_f) != 1:
             raise ValueError('F error')
-        self.e[2] ^= (self.sha2.dtype((diff_f == -1) ^ (diff_cg == -1)) << self.sha2.dtype(bit_index)) \
-            ^ (self.e[3] & point_mask)
+        self.e[2] ^= (
+            self.sha2.dtype((diff_f == -1) ^ (diff_cg == -1)) << self.sha2.dtype(bit_index)
+        ) ^ (self.e[3] & point_mask)
 
         big_mask = (1 << (bit_index + 1)) - 1
         sum_an = sum_en + self.sigma0 + (self.sha2.maj(self.a[4], self.a[3], self.a[2]) & mask)
-        sum_an2 = sum_an + (self.e[1] & mask) + (self.sha2.ch(self.e[4], self.e[3], self.e[2]) & big_mask)
+        sum_an2 = (
+            sum_an
+            + (self.e[1] & mask)
+            + (self.sha2.ch(self.e[4], self.e[3], self.e[2]) & big_mask)
+        )
         sum_a = self.a[4] ^ sum_an2
-        subsets_a = [[(((sum_a >> bit_index) & 1) == i) * ((((self.a[4] ^ self.a[3]) >> bit_index) & 1) == j)
-                     for j in (0, 1)] for i in (0, 1)]
-        averages_a = [[np.average(self.traces[subsets_a[i][j], 1]) for j in (0, 1)] for i in (0, 1)]
+        subsets_a = [
+            [
+                (((sum_a >> bit_index) & 1) == i)
+                * ((((self.a[4] ^ self.a[3]) >> bit_index) & 1) == j)
+                for j in (0, 1)
+            ]
+            for i in (0, 1)
+        ]
+        averages_a = [
+            [np.average(self.traces[subsets_a[i][j], 1]) for j in (0, 1)] for i in (0, 1)
+        ]
         diff_g = np.around(averages_a[1][0] - averages_a[0][0]).astype(int)
         if abs(diff_g) != 1:
             raise ValueError('G error')
-        self.e[1] ^= (self.sha2.dtype(diff_g == -1) << self.sha2.dtype(bit_index)) ^ (self.a[3] & point_mask)
+        self.e[1] ^= (self.sha2.dtype(diff_g == -1) << self.sha2.dtype(bit_index)) ^ (
+            self.a[3] & point_mask
+        )
         diff_b = np.around(averages_a[1][1] - averages_a[0][1]).astype(int)
         if abs(diff_b) != 1:
             raise ValueError('B error')
-        self.a[2] ^= (self.sha2.dtype(diff_b == -1) << self.sha2.dtype(bit_index)) ^ (self.e[1] & point_mask)
+        self.a[2] ^= (self.sha2.dtype(diff_b == -1) << self.sha2.dtype(bit_index)) ^ (
+            self.e[1] & point_mask
+        )
 
         if self.verbose:
-            print(('Bit {:2d}' + ' ' * 14 + self.sha2.formatter + '{} {}'
-                   + ' ' * (self.sha2.nibble_count + 2) + self.sha2.formatter + '{} {}').format(
-                  bit_index,
-                  self.a[3],
-                  self.sha2.show(self.a[2], bit_index),
-                  self.sha2.show(self.a[1], bit_index),
-                  self.e[3],
-                  self.sha2.show(self.e[2], bit_index),
-                  self.sha2.show(self.e[1], bit_index),
-                  ))
+            print(
+                (
+                    'Bit {:2d}'
+                    + ' ' * 14 + self.sha2.formatter + '{} {}'
+                    + ' ' * (self.sha2.nibble_count + 2)
+                    + self.sha2.formatter
+                    + '{} {}'
+                ).format(
+                    bit_index,
+                    self.a[3],
+                    self.sha2.show(self.a[2], bit_index),
+                    self.sha2.show(self.a[1], bit_index),
+                    self.e[3],
+                    self.sha2.show(self.e[2], bit_index),
+                    self.sha2.show(self.e[1], bit_index),
+                )
+            )
 
     def finalize(self):
         self.a[1] -= self.e[1]
-        self.e[0] = self.nextA - self.sha2.s0(self.a[3]) - self.sha2.maj(self.a[3], self.a[2], self.a[1]) \
-            - self.sha2.s1(self.e[3]) - self.sha2.ch(self.e[3], self.e[2], self.e[1]) - self.sha2.round_const[0]
-        self.a[0] = self.nextE - self.sha2.s1(self.e[3]) - self.sha2.ch(self.e[3], self.e[2], self.e[1]) \
-            - self.e[0] - self.sha2.round_const[0]
+        self.e[0] = (
+            self.nextA
+            - self.sha2.s0(self.a[3])
+            - self.sha2.maj(self.a[3], self.a[2], self.a[1])
+            - self.sha2.s1(self.e[3])
+            - self.sha2.ch(self.e[3], self.e[2], self.e[1])
+            - self.sha2.round_const[0]
+        )
+        self.a[0] = (
+            self.nextE
+            - self.sha2.s1(self.e[3])
+            - self.sha2.ch(self.e[3], self.e[2], self.e[1])
+            - self.e[0]
+            - self.sha2.round_const[0]
+        )
+
         if self.verbose:
-            print(('\nCandidate state:    ' + self.sha2.formatter * 8 + '\n').format(
-                   self.a[3], self.a[2], self.a[1], self.a[0], self.e[3], self.e[2], self.e[1], self.e[0],
-                   ))
-        return self.a[:-1][::-1]+self.e[:-1][::-1]
+            print(
+                ('\nCandidate state:    ' + self.sha2.formatter * 8 + '\n').format(
+                    self.a[3],
+                    self.a[2],
+                    self.a[1],
+                    self.a[0],
+                    self.e[3],
+                    self.e[2],
+                    self.e[1],
+                    self.e[0],
+                )
+            )
+
+        return self.a[:-1][::-1] + self.e[:-1][::-1]
 
 
 def stage1(sha2, data, traces, verbose):
@@ -263,6 +381,7 @@ def stage1(sha2, data, traces, verbose):
         print('\nStage 1a - finding deltaA, deltaE until the first mismatch\n')
     for bit_index in range(sha2.bit_count - 1):
         state.find_bit(bit_index)
+
     return state.finalize()
 
 
@@ -273,12 +392,14 @@ def stage2(sha2, data, traces, stage1_hypos, verbose):
     for stage1_hypo in stage1_hypos:
         stage2state = Stage2state(sha2, stage1_hypo, data, traces, verbose)
         if verbose:
-            print(('Stage 1 hypothesis:' + sha2.formatter + ' ' * 27 + sha2.formatter + '\n').format(
-                  stage1_hypo.prevA,
-                  stage1_hypo.prevE,
-                  stage1_hypo.nextA,
-                  stage1_hypo.nextE,
-                  ))
+            print(
+                ('Stage 1 hypothesis:' + sha2.formatter + ' ' * 27 + sha2.formatter + '\n').format(
+                    stage1_hypo.prevA,
+                    stage1_hypo.prevE,
+                    stage1_hypo.nextA,
+                    stage1_hypo.nextE,
+                )
+            )
         try:
             for bit_index in range(sha2.bit_count):
                 stage2state.find_bit(bit_index)
@@ -286,18 +407,24 @@ def stage2(sha2, data, traces, stage1_hypos, verbose):
         except ValueError:
             if verbose:
                 print('The hypothesis is rejected\n')
+
     return results
 
 
 def sha2_attack(sha2, data, traces, second_stage_count, filter_hypo=None, verbose=False):
-    """Full attack on SHA256. Returns:
-     1) a list of candidates for the secret initial state;
-     2) the number of hypotheses found at stage 1
-     """
+    """Full attack on SHA256.
+
+    Returns:
+    1) a list of candidates for the secret initial state;
+    2) the number of hypotheses found at stage 1.
+    """
     stage1_hypos = stage1(sha2, data, traces, verbose)
     if filter_hypo:
         stage1_hypos = filter_hypo(stage1_hypos)
-    results = stage2(sha2, data[:second_stage_count], traces[:second_stage_count], stage1_hypos, verbose)
+    results = stage2(
+        sha2, data[:second_stage_count], traces[:second_stage_count], stage1_hypos, verbose
+    )
     if len(results) == 0:
         raise ValueError('{}'.format(sha2.bit_count))
+
     return results, len(stage1_hypos)
