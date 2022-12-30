@@ -1,10 +1,11 @@
 from datetime import datetime
-
+import warnings
 from sha2 import Sha256, Sha512
-from test_sha2_attack import simulate
-
+from sha2_end_to_end import end_to_end_attack
 
 if __name__ == '__main__':
+    # Suppress expected overflows in 32-bit addition and subtraction
+    warnings.filterwarnings('ignore', category=RuntimeWarning)
     with open('res.csv', 'wt') as f_res, open('lsb.csv', 'wt') as f_lsb:
         prev_time = datetime.now()
         header = ',,' + ','.join(str(1 << i) for i in range(11, 21))
@@ -31,7 +32,7 @@ if __name__ == '__main__':
                     )
                     prev_time = cur_time
                     trace_count = 1 << trace_count_exp
-                    result_success_ratio, lsb_success_ratio = simulate(
+                    result_success_ratio, lsb_success_ratio = end_to_end_attack(
                         sha2, trace_count, trace_count, noise, experiment_count)
                     if lsb_success_ratio < 2:
                         start += 1
