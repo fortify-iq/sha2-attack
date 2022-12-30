@@ -1,4 +1,3 @@
-import random
 import numpy as np
 
 
@@ -11,7 +10,9 @@ def generate_traces(sha, trace_count, seed, noise):
     temp2_0 = sha.s0(iv[0]) + sha.maj(iv[0], iv[1], iv[2])
     delta_a = temp1_0 + temp2_0
     delta_e = iv[3] + temp1_0
-    hd1c = sha.hd(iv[0], iv[1]) + sha.hd(iv[1], iv[2]) + sha.hd(iv[4], iv[5]) + sha.hd(iv[5], iv[6])
+    hd1c = (
+        sha.hd(iv[0], iv[1]) + sha.hd(iv[1], iv[2]) + sha.hd(iv[4], iv[5]) + sha.hd(iv[5], iv[6])
+    )
     hd0c = hd1c + sha.hd(iv[2], iv[3]) + sha.hd(iv[6], iv[7])
     a1 = data[:, 0] + delta_a
     e1 = data[:, 0] + delta_e
@@ -27,4 +28,5 @@ def generate_traces(sha, trace_count, seed, noise):
     if noise:
         traces = traces.astype(float)
         traces += np.random.normal(scale=noise, size=(trace_count, 2))
+
     return data, traces, iv + [delta_a, delta_e]
