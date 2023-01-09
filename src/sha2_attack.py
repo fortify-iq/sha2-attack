@@ -365,7 +365,9 @@ class Stage2state:
             print(
                 (
                     'Bit {:2d}'
-                    + ' ' * 14 + self.sha2.formatter + '{} {}'
+                    + ' ' * 14
+                    + self.sha2.formatter
+                    + '{} {}'
                     + ' ' * (self.sha2.nibble_count + 2)
                     + self.sha2.formatter
                     + '{} {}'
@@ -446,10 +448,11 @@ def stage2(sha2, data, traces, stage1_hypos, verbose):
         if verbose:
             print(
                 (
-                  'Stage 1 hypothesis: '
-                  + sha2.formatter
-                  + ' ' * (sha2.nibble_count * 3 + 3)
-                  + sha2.formatter + '\n'
+                    'Stage 1 hypothesis: '
+                    + sha2.formatter
+                    + ' ' * (sha2.nibble_count * 3 + 3)
+                    + sha2.formatter
+                    + '\n'
                 ).format(
                     stage1_hypo.prevA,
                     stage1_hypo.prevE,

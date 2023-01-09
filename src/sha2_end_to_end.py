@@ -38,7 +38,8 @@ def end_to_end_attack(
                 '\n'
                 + ' ' * 20
                 + (' ' * sha2.nibble_count).join(('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'))
-                + ' ' * (sha2.nibble_count + 2) + 'DeltaA   DeltaE'
+                + ' ' * (sha2.nibble_count + 2)
+                + 'DeltaA   DeltaE'
             )
             print(
                 ('The initial state:  ' + sha2.formatter * 8 + '  ' + sha2.formatter * 2).format(
@@ -57,8 +58,8 @@ def end_to_end_attack(
                 filter_hypotheses if filter_hypo else None,
                 verbose
             )
-            # Errors in stage 2 are exceptionally rare. If one happens, we count only one correct word
-            # although in fact it may be more
+            # Errors in stage 2 are exceptionally rare. If one happens, we count only
+            # one correct word although in fact it may be more
             lsb_success_count += 2 * sha2.bit_count if iv[:8] in results else sha2.bit_count
             result_success_count += 1
             # Print the results
@@ -68,11 +69,16 @@ def end_to_end_attack(
                 print('Success {:5d} {:3d}'.format(count, len(results)))
             for result in results:
                 if verbose:
-                    print((' ' * 20 + sha2.formatter * 8 + '  {}')
-                          .format(*result, 'correct' if result == iv[:8] else 'wrong'))
+                    print(
+                        (' ' * 20 + sha2.formatter * 8 + '  {}').format(
+                            *result, 'correct' if result == iv[:8] else 'wrong'
+                        )
+                    )
         except ValueError as error_index:
             lsb_success_count += int('{}'.format(error_index))
             if verbose or not filter_hypo:
                 print('Failure: bit {}'.format(error_index))
-    return result_success_count / experiment_count * 100, \
-        lsb_success_count / experiment_count / (2 * sha2.bit_count) * 100
+    return (
+        result_success_count / experiment_count * 100,
+        lsb_success_count / experiment_count / (2 * sha2.bit_count) * 100,
+    )
