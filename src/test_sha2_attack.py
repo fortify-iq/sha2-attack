@@ -42,7 +42,8 @@ def parse():
         '--noise',
         type=float,
         default=None,
-        help='Standard deviation of the normally distributed noise added to the trace (0 by default)',
+        help='Standard deviation of the normally distributed noise '
+        'added to the trace (0 by default)',
     )
     parser.add_argument(
         '-e',
@@ -89,11 +90,21 @@ def parse():
 
 if __name__ == '__main__':
     # Parse the command line
-    sha2, trace_count, second_stage_count, noise, experiment_count, seed, filter_hypo, verbose = parse()
+    (
+        sha2,
+        trace_count,
+        second_stage_count,
+        noise,
+        experiment_count,
+        seed,
+        filter_hypo,
+        verbose,
+    ) = parse()
     # Suppress expected overflows in addition and subtraction
     warnings.filterwarnings('ignore', category=RuntimeWarning)
     result_ratio, lsb_success_ratio = end_to_end_attack(
-        sha2, trace_count, second_stage_count, noise, experiment_count, seed, filter_hypo, verbose)
+        sha2, trace_count, second_stage_count, noise, experiment_count, seed, filter_hypo, verbose
+    )
     if not verbose:
         print('{:5.2f}% correct answers'.format(result_ratio))
         print('{:5.2f}% correct least significant bits'.format(lsb_success_ratio))

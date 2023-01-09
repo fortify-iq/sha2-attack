@@ -69,10 +69,8 @@ class Stage1state:
         self.verbose = verbose
 
     def update_prevs(self, current_index, hd):
-        """
-        Substage 1b (section 3.4.2) up to the least significant mismatching bit
-        between DeltaA_0 and DeltaE0 (case 1 in section 3.4.1)
-        """
+        """Substage 1b (section 3.4.2) up to the least significant mismatching
+        bit between DeltaA_0 and DeltaE_0 (case 1 in section 3.4.1)"""
 
         mask = self.sha2.dtype((1 << (current_index + 2)) - 1)
         subsets = [
@@ -109,10 +107,8 @@ class Stage1state:
                 )
 
     def find_bit_before_mismatch(self, bit_index):
-        """
-        Substage 1a (section 3.4.1) up to the least significant mismatching bit
-        between DeltaA_0 and DeltaE0 (case 1 in section 3.4.1)
-        """
+        """Substage 1a (section 3.4.1) up to the least significant mismatching
+        bit between DeltaA_0 and DeltaE_0 (case 1 in section 3.4.1)"""
 
         assert bit_index >= self.known_bits
         unknown_bits = bit_index + 1 - self.known_bits
@@ -207,11 +203,9 @@ class Stage1state:
         raise ValueError('{}'.format(bit_index))
 
     def find_bit_after_mismatch(self, bit_index):
-        """
-        Substages 1a (section 3.4.1) and 1b (section 3.4.2)
-        simultaneously after the first mismatch
-        between DeltaA_0 and DeltaE0 (case 2 in section 3.4.1)
-        """
+        """Substages 1a (section 3.4.1) and 1b (section 3.4.2) simultaneously
+        after the first mismatch between DeltaA_0 and DeltaE_0 (case 2 in
+        section 3.4.1)"""
 
         assert bit_index == self.known_bits
 
@@ -268,10 +262,8 @@ class Stage1state:
                 )
 
     def finalize(self):
-        """
-        Convert self.prevs and self.nexts into a list of hypotheses
-        for stage 2 (section 3.4.3)
-        """
+        """Convert self.prevs and self.nexts into a list of hypotheses for
+        stage 2 (section 3.4.3)"""
         return [
             Stage1hypo(
                 nextA=self.nexts[i] ^ a,
@@ -365,7 +357,9 @@ class Stage2state:
             print(
                 (
                     'Bit {:2d}'
-                    + ' ' * 14 + self.sha2.formatter + '{} {}'
+                    + ' ' * 14
+                    + self.sha2.formatter
+                    + '{} {}'
                     + ' ' * (self.sha2.nibble_count + 2)
                     + self.sha2.formatter
                     + '{} {}'
@@ -381,9 +375,7 @@ class Stage2state:
             )
 
     def finalize(self):
-        """
-        Find the rest of the initial stage (Section 3.5.1)
-        """
+        """Find the rest of the initial stage (Section 3.5.1)"""
 
         self.a[1] -= self.e[1]
         self.e[0] = (
@@ -420,9 +412,7 @@ class Stage2state:
 
 
 def stage1(sha2, data, traces, verbose):
-    """
-    Stage 1 (section 3.4)
-    """
+    """Stage 1 (section 3.4)"""
 
     state = Stage1state(sha2, data, traces, verbose)
     if verbose:
@@ -434,9 +424,7 @@ def stage1(sha2, data, traces, verbose):
 
 
 def stage2(sha2, data, traces, stage1_hypos, verbose):
-    """
-    Stage 2 (section 3.5)
-    """
+    """Stage 2 (section 3.5)"""
 
     results = []
     if verbose:
@@ -446,10 +434,11 @@ def stage2(sha2, data, traces, stage1_hypos, verbose):
         if verbose:
             print(
                 (
-                  'Stage 1 hypothesis: '
-                  + sha2.formatter
-                  + ' ' * (sha2.nibble_count * 3 + 3)
-                  + sha2.formatter + '\n'
+                    'Stage 1 hypothesis: '
+                    + sha2.formatter
+                    + ' ' * (sha2.nibble_count * 3 + 3)
+                    + sha2.formatter
+                    + '\n'
                 ).format(
                     stage1_hypo.prevA,
                     stage1_hypo.prevE,
