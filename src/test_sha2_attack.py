@@ -1,3 +1,11 @@
+#  Copyright © 2022 FortifyIQ, Inc.
+#
+#  All Rights Reserved.
+#
+#  All information contained herein is, and remains, the property of FortifyIQ, Inc.
+#  Dissemination of this information or reproduction of this material, in any medium,
+#  is strictly forbidden unless prior written permission is obtained from FortifyIQ, Inc.
+
 import warnings
 import argparse
 
@@ -13,42 +21,42 @@ def parse():
         type=int,
         choices=[32, 64],
         default=32,
-        help='The number of bits in the secret numbers',
+        help='Bit size of words - 32 for SHA256 or 64 for SHA512 (32 by default)',
     )
     parser.add_argument(
         '-t',
         '--trace-count',
         type=int,
         default=100000,
-        help='The number of traces to acquire for the attack',
+        help='Number of traces to acquire for the attack (100K by default)',
     )
     parser.add_argument(
         '-s',
         '--second-stage-count',
         type=int,
         default=20000,
-        help='The number of traces to use for the second stage',
+        help='Number of traces to use for the second stage (20K by default)',
     )
     parser.add_argument(
         '-n',
         '--noise',
         type=float,
         default=None,
-        help='The standard deviation of normally distributed noise',
+        help='Standard deviation of the normally distributed noise added to the trace (0 by default)',
     )
     parser.add_argument(
         '-e',
         '--experiment-count',
         type=int,
         default=1,
-        help='The number of experiments to perform',
+        help='Number of experiments to perform (1 by default)',
     )
     parser.add_argument(
         '-r',
         '--random-seed',
         type=int,
         default=None,
-        help='A random seed for the secret generation',
+        help='Random seed for the secret generation (None by default)',
     )
     parser.add_argument(
         '-f',
@@ -80,10 +88,10 @@ def parse():
 
 
 if __name__ == '__main__':
-    # Suppress expected overflows in 32-bit addition and subtraction
-    warnings.filterwarnings('ignore', category=RuntimeWarning)
     # Parse the command line
     sha2, trace_count, second_stage_count, noise, experiment_count, seed, filter_hypo, verbose = parse()
+    # Suppress expected overflows in addition and subtraction
+    warnings.filterwarnings('ignore', category=RuntimeWarning)
     result_ratio, lsb_success_ratio = end_to_end_attack(
         sha2, trace_count, second_stage_count, noise, experiment_count, seed, filter_hypo, verbose)
     if not verbose:

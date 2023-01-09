@@ -1,3 +1,11 @@
+#  Copyright © 2022 FortifyIQ, Inc.
+#
+#  All Rights Reserved.
+#
+#  All information contained herein is, and remains, the property of FortifyIQ, Inc.
+#  Dissemination of this information or reproduction of this material, in any medium,
+#  is strictly forbidden unless prior written permission is obtained from FortifyIQ, Inc.
+
 from collections import namedtuple
 
 import numpy as np
@@ -45,14 +53,27 @@ class Stage1state:
     def __init__(self, sha2, data, traces, verbose):
         self.sha2 = sha2
         self.known_bits = 0
+
+        # DeltaA_0, DeltaE_0 (in the descending order of value)
         self.nexts = np.zeros(2, dtype=sha2.dtype)
-        self.prevs = np.zeros(2, dtype=sha2.dtype).reshape((1, 2))
+
+        # A_{-1}, E{-1} (set of pairs. The order in each pair is
+        # consistent with the order of self.nexts)
+        self.prevs = np.zeros((1, 2), dtype=sha2.dtype)
+
+        # For every step, call self.find_bit_before_mismatch
+        # until the first mismatch between DeltaA_0 and DeltaE_0
         self.find_bit = self.find_bit_before_mismatch
         self.data = data
         self.traces = traces
         self.verbose = verbose
 
     def update_prevs(self, current_index, hd):
+        """
+        Substage 1b (section 3.4.2) up to the least significant mismatching bit
+        between DeltaA_0 and DeltaE0 (case 1 in section 3.4.1)
+        """
+
         mask = self.sha2.dtype((1 << (current_index + 2)) - 1)
         subsets = [
             (((self.data[:, 0] + (self.nexts[0] & mask)) >> current_index) & 3) == x
@@ -88,6 +109,11 @@ class Stage1state:
                 )
 
     def find_bit_before_mismatch(self, bit_index):
+        """
+        Substage 1a (section 3.4.1) up to the least significant mismatching bit
+        between DeltaA_0 and DeltaE0 (case 1 in section 3.4.1)
+        """
+
         assert bit_index >= self.known_bits
         unknown_bits = bit_index + 1 - self.known_bits
         mask = (1 << (unknown_bits + 1)) - 1
@@ -105,6 +131,7 @@ class Stage1state:
         ).astype(int)
         indices = np.array(np.nonzero(leaps)[0])
 
+        # Subcase 1.1
         if len(indices) == 0:
             if self.verbose:
                 print(
@@ -121,6 +148,7 @@ class Stage1state:
                 )
             return
 
+        # Subcase 1.2
         if len(indices) == 1:
             self.nexts += self.sha2.dtype(
                 ((1 << unknown_bits) - 1 - indices[0]) << self.known_bits
@@ -143,14 +171,16 @@ class Stage1state:
                 )
             return
 
+        # Subcase 1.3 - the first mismatch between DeltaA_0 and DeltaE0
         if len(indices) == 2:
+            # From now on, call self.find_bit for every step
+            self.find_bit = self.find_bit_after_mismatch
             self.nexts += (((1 << unknown_bits) - 1 - indices) << self.known_bits).astype(
                 self.sha2.dtype
             )
             self.known_bits = bit_index + 1
             if any(abs(leaps[index]) != 2 for index in indices):
                 raise ValueError('{}'.format(bit_index))
-            self.find_bit = self.find_bit_after_mismatch
             if self.verbose:
                 print(
                     (
@@ -177,6 +207,12 @@ class Stage1state:
         raise ValueError('{}'.format(bit_index))
 
     def find_bit_after_mismatch(self, bit_index):
+        """
+        Substages 1a (section 3.4.1) and 1b (section 3.4.2)
+        simultaneously after the first mismatch
+        between DeltaA_0 and DeltaE0 (case 2 in section 3.4.1)
+        """
+
         assert bit_index == self.known_bits
 
         nexts = [self.nexts[i] for i in (0, 1)]
@@ -232,6 +268,10 @@ class Stage1state:
                 )
 
     def finalize(self):
+        """
+        Convert self.prevs and self.nexts into a list of hypotheses
+        for stage 2 (section 3.4.3)
+        """
         return [
             Stage1hypo(
                 nextA=self.nexts[i] ^ a,
@@ -341,6 +381,10 @@ class Stage2state:
             )
 
     def finalize(self):
+        """
+        Find the rest of the initial stage (Section 3.5.1)
+        """
+
         self.a[1] -= self.e[1]
         self.e[0] = (
             self.nextA
@@ -376,6 +420,10 @@ class Stage2state:
 
 
 def stage1(sha2, data, traces, verbose):
+    """
+    Stage 1 (section 3.4)
+    """
+
     state = Stage1state(sha2, data, traces, verbose)
     if verbose:
         print('\nStage 1a - finding deltaA, deltaE until the first mismatch\n')
@@ -386,6 +434,10 @@ def stage1(sha2, data, traces, verbose):
 
 
 def stage2(sha2, data, traces, stage1_hypos, verbose):
+    """
+    Stage 2 (section 3.5)
+    """
+
     results = []
     if verbose:
         print('\nStage 2 - finding B,C,F,G\n')
@@ -393,7 +445,12 @@ def stage2(sha2, data, traces, stage1_hypos, verbose):
         stage2state = Stage2state(sha2, stage1_hypo, data, traces, verbose)
         if verbose:
             print(
-                ('Stage 1 hypothesis:' + sha2.formatter + ' ' * 27 + sha2.formatter + '\n').format(
+                (
+                  'Stage 1 hypothesis: '
+                  + sha2.formatter
+                  + ' ' * (sha2.nibble_count * 3 + 3)
+                  + sha2.formatter + '\n'
+                ).format(
                     stage1_hypo.prevA,
                     stage1_hypo.prevE,
                     stage1_hypo.nextA,
