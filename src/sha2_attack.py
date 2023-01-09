@@ -70,7 +70,7 @@ class Stage1state:
 
     def update_prevs(self, current_index, hd):
         """Substage 1b (section 3.4.2) up to the least significant mismatching
-        bit between DeltaA_0 and DeltaE0 (case 1 in section 3.4.1)"""
+        bit between DeltaA_0 and DeltaE_0 (case 1 in section 3.4.1)"""
 
         mask = self.sha2.dtype((1 << (current_index + 2)) - 1)
         subsets = [
@@ -108,7 +108,7 @@ class Stage1state:
 
     def find_bit_before_mismatch(self, bit_index):
         """Substage 1a (section 3.4.1) up to the least significant mismatching
-        bit between DeltaA_0 and DeltaE0 (case 1 in section 3.4.1)"""
+        bit between DeltaA_0 and DeltaE_0 (case 1 in section 3.4.1)"""
 
         assert bit_index >= self.known_bits
         unknown_bits = bit_index + 1 - self.known_bits
@@ -204,7 +204,7 @@ class Stage1state:
 
     def find_bit_after_mismatch(self, bit_index):
         """Substages 1a (section 3.4.1) and 1b (section 3.4.2) simultaneously
-        after the first mismatch between DeltaA_0 and DeltaE0 (case 2 in
+        after the first mismatch between DeltaA_0 and DeltaE_0 (case 2 in
         section 3.4.1)"""
 
         assert bit_index == self.known_bits
