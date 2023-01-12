@@ -13,7 +13,7 @@ Directory `src` contains the following files:
 * `sha2_end_to_end.py` - calls the trace generation function from `sha2_trace_generation.py`, calls the attack function from `sha2_attack.py`, and evaluates the result.
 * `test_sha2_attack.py` - command line utility which performs the attack on SHA2 in a loop using `end-to-end.py` and collects statistics.
 
-## Usage of `test_cdpa_attack.py`
+## Usage of `test_sha2_attack.py`
 `test_sha2_attack.py [-h] [-b BIT_COUNT ] [-t TRACE_COUNT] [-s SECOND_STAGE_COUNT] [-n NOISE] [-e EXPERIMENT_COUNT] [-r RANDOM_SEED] [-f] [-v]`
 
 - `-h` - Help.

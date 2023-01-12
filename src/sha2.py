@@ -1,3 +1,7 @@
+#  Copyright © 2022-2023 [unidentified]
+#
+#  All Rights Reserved.
+
 import numpy as np
 
 
