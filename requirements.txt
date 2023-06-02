@@ -1,1 +1,1 @@
-numpy
+numpy ; python_version >= "3.8"

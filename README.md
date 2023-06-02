@@ -3,10 +3,12 @@
 The attack assumptions are as follows. A device calculates the SHA2 (either 32-bit SHA256 or 64-bit SHA512) compression function, starting from a secret internal state, one round per clock cycle. The attacker feeds randomly distributed known inputs, and observes the side channel leakage traces. This is exactly what happens in the second application of the compression function in both the inner and outer hashes of HMAC SHA2, so this attack can be used to discover both of these internal states (by attacking first the inner hash and then the outer hash). This enables the attacker to forge the HMAC SHA2 tag for arbitrary messages. The leakage model assumes that the Hamming distance between the consecutive internal states leaks; optionally, a normally distributed random noise is added. The attack implemented here uses only the two first Hamming distances, and (when successful) produces a small set of candidates for the secret initial internal state. The correct candidate can be subsequently found by predicting the Hamming distances in the later rounds and comparing them to the actual traces.
 
 The repository contains two directories:
+
 * `src` - Python code implementing the attack
 * `docs` - An Excel spreadsheet with statistical data`
 
 Directory `src` contains the following files:
+
 * `sha2.py` - implements basic building blocks and parameters of SHA256 and SHA512. Used in both the trace generation and the attack.
 * `sha2_trace_generation.py` - generates traces for the attack on SHA2.
 * `sha2_attack.py` - mounts the attack on SHA2.
@@ -14,6 +16,7 @@ Directory `src` contains the following files:
 * `test_sha2_attack.py` - command line utility which performs the attack on SHA2 in a loop using `sha2_end_to_end.py` and collects statistics.
 
 ## Usage of `test_sha2_attack.py`
+
 `test_sha2_attack.py [-h] [-b BIT_COUNT ] [-t TRACE_COUNT] [-s SECOND_STAGE_COUNT] [-n NOISE] [-e EXPERIMENT_COUNT] [-r RANDOM_SEED] [-f] [-v]`
 
 - `-h` - Help.
@@ -26,10 +29,23 @@ Directory `src` contains the following files:
 - `-f` - Filter hypotheses. After a successful completion of stage 1, perform stage 2 only with the correct hypothesis. (In some cases, the first stage generates as many as 2,048 hypotheses.)
 - `-v` - Verbose. Permissible only if the number of experiments is 1 (which is the default). Outputs a summary of the rounds corresponding to bits 0-7 (or less if the bit size is less than 8).
 
+## Environment requirements
+
+* Python of version `>= 3.8`.
+
 ## Installation of Dependencies
 
 The codebase of the attack has a few dependencies.
 
 The simplest way to install them is by using the [pip](https://pip.pypa.io/en/stable/) package manager.
 The list of dependencies is contained within the `requirements.txt` file.
-Use the commands described [here](https://pip.pypa.io/en/stable/user_guide/#requirements-files) to install the dependencies.
+
+To install dependencies run `pip install` command:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+For more details on installation refer to pip [user guide](https://pip.pypa.io/en/stable/user_guide/#requirements-files).
+
+Note that in case of unmet [environment requirements](#environment-requirements) the ignorance meassage is shown after running the command above. Appropriate version of Python interpreter should be installed to fix the problem.
