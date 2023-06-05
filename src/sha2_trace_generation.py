@@ -45,6 +45,6 @@ def generate_traces(sha, trace_count, seed, noise):
     traces = np.array([hd0c + hd0v, hd1c + hd1v]).transpose()
     if noise:
         traces = traces.astype(float)
-        traces += np.random.normal(scale=noise, size=(trace_count, 2))
+        traces += state.normal(scale=noise, size=(trace_count, 2))
 
     return data, traces, iv + [delta_a, delta_e]
