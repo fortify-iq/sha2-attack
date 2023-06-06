@@ -38,7 +38,7 @@ Unless option `-f` is used, for every experiment a line is printed out. It inclu
 
 In any case, the two last lines of the printout of `test_sha2_attack.py` are:
 
-```bash
+```text
 xx.xx% correct answers
 yy.yy% correct least significant bits
 ```
