@@ -52,7 +52,7 @@ Table 2 is based on the data in file `results/sha2_attack_stats.xlsx`, sheet `re
 All the values in `results/sha2_attack_stats.xlsx` can be reproduced using `test_sha2_attack.py`. For example, in order to reproduce cell G3 in the two sheets of `results/sha2_attack_stats.xlsx`, use, e.g., the following command line:
 
 ```bash
-python.exe ./test_sha2_attack.py -b 32 -n 0 -t 65536 -e 100 -f
+python test_sha2_attack.py -b 32 -n 0 -t 65536 -e 100 -f
 ```
 
 The number of experiments (parameter `-e`) can be chosen arbitrarily, taking into account that both the precision and the run time increase as the number of experiments increases. The results may slightly deviate from the data in `results/sha2_attack_stats.xlsx`, since the metrics are estimated on a randomly chosen finite set of experiments.
