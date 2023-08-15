@@ -44,7 +44,7 @@ def parse():
         '-s',
         '--second-stage-count',
         type=int,
-        default=20000,
+        default=None,
         help='Number of traces to use for the second stage (20K by default)',
     )
     parser.add_argument(
@@ -89,7 +89,8 @@ def parse():
     return (
         Sha256 if args.bit_count == 32 else Sha512,
         args.trace_count,
-        min(args.trace_count, args.second_stage_count),
+        min(args.trace_count, args.second_stage_count) \
+            if args.second_stage_count else args.trace_count,
         args.noise,
         args.experiment_count,
         args.random_seed,

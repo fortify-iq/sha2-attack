@@ -1,6 +1,9 @@
 # Simulator of the CDPA Based Attack on SHA2
 
-The attack assumptions are as follows. A device calculates the SHA2 (either 32-bit SHA256 or 64-bit SHA512) compression function, starting from a secret internal state, one round per clock cycle. The attacker feeds randomly distributed known inputs, and observes the side channel leakage traces. This is exactly what happens in the second application of the compression function in both the inner and outer hashes of HMAC SHA2, so this attack can be used to discover both of these internal states (by attacking first the inner hash and then the outer hash). This enables the attacker to forge the HMAC SHA2 tag for arbitrary messages. The leakage model assumes that the Hamming distance between the consecutive internal states leaks. Optionally, a normally distributed random noise is added. The attack implemented here uses only the first two Hamming distances, and (when successful) produces a small set of candidates for the secret initial internal state. The correct candidate can be subsequently found by predicting the Hamming distances in the later rounds and comparing them to the actual traces.
+This repository implements the CDPA based attack on SHA2 as described in the paper [Carry-based Differential Power Analysis (CDPA) and its Application to Attacking HMAC-SHA-2](https://tches.iacr.org/index.php/TCHES/article/view/10955/10262). For the attack on HMAC SHA2 described in the same paper, see the repository [https://github.com/fortify-iq/hmac-attack](https://github.com/fortify-iq/hmac-attack) which is dependent on this repository.
+
+The attack assumptions are as follows. A device calculates the SHA2 (either 32-bit SHA256 or 64-bit SHA512) compression function, starting from a secret internal state, one round per clock cycle. The attacker feeds the device randomly distributed known inputs, and observes the side channel leakage traces. This is exactly what happens in the second application of the compression function in both the inner and outer hashes of HMAC SHA2, so this attack can be used to discover both of these internal states (by attacking first the inner hash and then the outer hash). This enables the attacker to forge the HMAC SHA2 tag for arbitrary messages. The leakage model assumes that the Hamming distance between the consecutive internal states leaks. Optionally, a normally distributed random noise is added. The attack implemented here uses only the first two Hamming distances, and (when successful) produces a small set of candidates for the secret initial internal state. The correct candidate can be subsequently found by predicting the Hamming distances in the later rounds and comparing them to the actual traces.
+
 
 The repository contains two folders:
 
@@ -22,16 +25,16 @@ Folder `results` contains the following files:
 
 ## Usage of `test_sha2_attack.py`
 
-`test_sha2_attack.py [-h] [-b BIT_COUNT ] [-t TRACE_COUNT] [-s SECOND_STAGE_COUNT] [-n NOISE] [-e EXPERIMENT_COUNT] [-r RANDOM_SEED] [-f] [-v]`
+`test_sha2_attack.py [-h] [-b BIT_COUNT] [-t TRACE_COUNT] [-s SECOND_STAGE_COUNT] [-n NOISE] [-e EXPERIMENT_COUNT] [-r RANDOM_SEED] [-f] [-v]`
 
 - `-h` - Help.
 - `-b` - Bit size (32 for SHA256, 64 for SHA5120). Default value 32 (SHA256).
 - `-t` - Number of traces in one experiment. Default value 100K.
-- `-s` - Number of traces to be used for stage 2. Default value 20K.
+- `-s` - Number of traces to be used for stage 2. By default, the same number as used for stage 1.
 - `-n` - Amplitude of normally distributed noise added to the traces. Default value 0 (no noise).
 - `-e` - Number of experiments. Default value 1.
 - `-r` - Random seed. If no random seed is provided, the experiments are not reproducible, since each time different random values are used. If a random seed is provided, the experiments are reproducible, and the same command line always produces the same result.
-- `-f` - Filter hypotheses. After a successful completion of stage 1, perform stage 2 only with the correct hypothesis. (In some cases, the first stage generates as many as 2,048 hypotheses.)
+- `-f` - Filter hypotheses. After a successful completion of stage 1, performs stage 2 with only the correct hypothesis. (In some cases, the first stage generates as many as 2,048 hypotheses.)
 - `-v` - Verbose. Permissible only if the number of experiments is 1 (which is the default). Prints a detailed log of all the steps of the attack.
 
 Unless option `-f` is used, for every experiment a line is printed out. It includes the RNG seed used to generate the traces and the noise, the result (Success/Failure), and some additional information. If the number of experiments is large, using option `-f` is recommended in order to save time and suppress this printout.
