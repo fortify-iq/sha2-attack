@@ -17,8 +17,8 @@
 # contact kreimer@fortifyiq.com
 
 import random
-from sha2_attack import sha2_attack, Stage1hypo
-from sha2_trace_generation import generate_traces
+from .sha2_attack import sha2_attack, Stage1hypo
+from .sha2_trace_generation import generate_traces
 
 
 def end_to_end_attack(
