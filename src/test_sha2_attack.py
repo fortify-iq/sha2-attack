@@ -45,7 +45,7 @@ def parse():
         '--second-stage-count',
         type=int,
         default=None,
-        help='Number of traces to use for the second stage (20K by default)',
+        help='Number of traces to use for the second stage (by default, the same number as used for stage 1)',
     )
     parser.add_argument(
         '-n',
