@@ -7,7 +7,7 @@ The attack assumptions are as follows. A device calculates the SHA2 (either 32-b
 The repository contains two folders:
 
 * `src` - The Python code that implements the attack
-* `results` - Statistical data produced using this code
+* `docs` - Statistical data produced using this code
 
 Folder `src` contains the following files:
 
@@ -17,7 +17,7 @@ Folder `src` contains the following files:
 * `sha2_end_to_end.py` - calls the trace generation function from `sha2_trace_generation.py`, calls the attack function from `sha2_attack.py`, and evaluates the result.
 * `test_sha2_attack.py` - a command line utility which performs the attack on SHA2 in a loop using `sha2_end_to_end.py` and collects statistics.
 
-Folder `results` contains the following files:
+Folder `docs` contains the following files:
 
 * `sha2_attack_stats.xlsx` - a Microsoft Excel file containing the metrics M<sub>1</sub>, M<sub>2</sub> described in Section 2.3.5 of the CDPA paper measured for different configurations, and the graph based on this data which is shown in Figure 11 of the CDPA paper
 * `res(M1).csv, lsb(M2).csv` - the two sheets of `sha2_attack_stats.xlsx` exported to the `csv` text format
@@ -63,12 +63,12 @@ These two lines reflect the estimations of metrics M<sub>1</sub>, M<sub>2</sub> 
 
 ## Reproducing the Results from the CDPA Paper
 
-Table 2 is based on the data in file `results/sha2_attack_stats.xlsx`, sheet `res(M1)`. For example, the upper left entry (2<sup>16</sup> for SHA256, noise 0) reflects the fact that the first entry in row 3 of this sheet (SHA256, noise 0) which is greater that 50% is in cell G3, corresponding to 65,536=2<sup>16</sup> traces.
+Table 2 is based on the data in file `docs/sha2_attack_stats.xlsx`, sheet `res(M1)`. For example, the upper left entry (2<sup>16</sup> for SHA256, noise 0) reflects the fact that the first entry in row 3 of this sheet (SHA256, noise 0) which is greater that 50% is in cell G3, corresponding to 65,536=2<sup>16</sup> traces.
 
-All the values in `results/sha2_attack_stats.xlsx` can be reproduced using this utility. For example, in order to reproduce cell G3 in the two sheets of `results/sha2_attack_stats.xlsx`, use, e.g., the following command line:
+All the values in `docs/sha2_attack_stats.xlsx` can be reproduced using this utility. For example, in order to reproduce cell G3 in the two sheets of `docs/sha2_attack_stats.xlsx`, use, e.g., the following command line:
 
 ```bash
 sha2-attack -b 32 -n 0 -t 65536 -e 100 -f
 ```
 
-The number of experiments (parameter `-e`) can be chosen arbitrarily, taking into account that both the precision and the run time increase as the number of experiments increases. The results may slightly deviate from the data in `results/sha2_attack_stats.xlsx`, since the metrics are estimated on a randomly chosen finite set of experiments.
+The number of experiments (parameter `-e`) can be chosen arbitrarily, taking into account that both the precision and the run time increase as the number of experiments increases. The docs may slightly deviate from the data in `docs/sha2_attack_stats.xlsx`, since the metrics are estimated on a randomly chosen finite set of experiments.
