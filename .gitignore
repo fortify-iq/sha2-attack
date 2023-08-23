@@ -1,7 +1,2 @@
 .idea
-
-# Bytecode
 __pycache__
-
-# Distribution / packaging
-*.egg-info/

@@ -19,8 +19,8 @@
 import warnings
 import argparse
 
-from .sha2 import Sha256, Sha512
-from .sha2_end_to_end import end_to_end_attack
+from sha2 import Sha256, Sha512
+from sha2_end_to_end import end_to_end_attack
 
 
 def parse():
@@ -99,7 +99,7 @@ def parse():
     )
 
 
-def run():
+if __name__ == '__main__':
     # Parse the command line
     (
         sha2,
@@ -119,7 +119,3 @@ def run():
     if not verbose:
         print('{:5.2f}% correct answers'.format(result_ratio))
         print('{:5.2f}% correct least significant bits'.format(lsb_success_ratio))
-
-
-if __name__ == '__main__':
-    run()
